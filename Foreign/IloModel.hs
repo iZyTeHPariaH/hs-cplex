@@ -50,18 +50,42 @@ buildLC' nNVar nBVar nIVar (LinCombination lc) = do
       bVarArray = map realToFrac $elems $ emptyArray nBVar // b
       iVarArray = map realToFrac $ elems $ emptyArray nIVar // i
   lift $ liftIO $ do
-    a1 <- newArray nVarArray
-    a2 <- newArray bVarArray
-    a3 <- newArray iVarArray
-    return (a1,a2,a3)
+    ntab <- newArray nVarArray
+    btab <- newArray bVarArray
+    itab <- newArray iVarArray
+    return (ntab,btab,itab)
 {- Crée un tableau contenant la combinaison linéaire objectif -}                                        
 buildObjective :: (Num b, Storable b, RealFrac b) => LPT Var b (VSupplyT IO) (Ptr CDouble)
 buildObjective = gets getObjective >>= buildLC 
-  
+buildObjective' n b i = gets getObjective >>= buildLC' n b i  
+                 
 {- Crée un tableau contenant la contrainte spécifiée -}
 buildCtrLC :: (Num b, Storable b, RealFrac b) => IloConstraint Var b -> LPT Var b (VSupplyT IO) (Ptr CDouble)
 buildCtrLC (IloRange _ lc _) = buildLC lc
+buildCtrLC' n b i (IloRange _ lc _) = buildLC' n b i lc 
 
+buildLP' :: (Num b, Storable b, RealFrac b) =>
+           LPT Var b (VSupplyT IO)
+           (Ptr CDoubleArray,
+            (Ptr CDoubleArray, Ptr (Ptr CDoubleArray)),
+            (Int,Int,Int,Int))
+buildLP' = do
+  (n,b,i) <- countVarTypes
+  ctrlist <- gets $ M.elems.getConstraints
+  (nobj,bobj,iobj) <- buildObjective' n b i
+  (boundtab, ctab) <- foldM (\(boun,cpt) e@(IloRange (BoundVal lb) _ (BoundVal ub)) -> do
+                                          (npt,bpt,ipt) <- buildCtrLC' n b i e
+                                          ptboun <- lift $ liftIO $ newArray [realToFrac lb, realToFrac ub]
+                                          ct <- lift $ liftIO $ newArray [npt,bpt,ipt]
+                                          return (ptboun:boun,ct:cpt) ) ([],[]) ctrlist
+  lift $ liftIO $ do
+    boun <- newArray boundtab
+    cpt <- newArray ctab
+    objpt <- newArray [nobj,bobj,iobj]
+
+    return (objpt,
+            (boun,cpt),
+           (n,b,i, length boundtab))
 {- Crée :
    -> un tableau de taille n pour la fonction objectif
    -> p tableaux de taille n pour chaque contraintes linéaires

@@ -4,7 +4,7 @@ import Control.Monad.State
 import Data.LinCombination
 import Data.CplexTypes
 import Data.Var
-import Data.Map.Lazy
+import Data.Map.Lazy hiding (foldl)
 import Foreign.C.Types
 
 setVarKind :: (Monad m, Ord a) => a -> VarKind -> LPT a b m ()
@@ -37,3 +37,11 @@ testlp2= do
   addCtr $ IloRange (BoundVal 0) ((-1).* x1 .+ 2 .* x2) (BoundVal 8)
   addCtr $ IloRange (BoundVal 0) (2 .* x1 .+ (-1).* x2) (BoundVal 10)
   return ()
+
+testks :: LPT Var Double (VSupplyT IO) ()
+testks = do
+  vars <- supplyN 4
+  setObjective $ foldl (.+) (LinCombination []) $ zipWith (.*) [7,4,3,3] vars
+  let ctr = foldl (.+) (LinCombination []) $ zipWith (.*) [13,12,8,10] vars
+  addCtr $ IloRange (BoundVal 0) ctr (BoundVal 30)
+  foldM (\_ e -> setVarKind e BinVar) () vars

@@ -12,30 +12,30 @@ Env* lpInitSolver(void){
 	return (void*) e;
 }
 
-Model* lpNewModel(Env* env, int nbVars, int nbCtr, double** bounds, double** ctr, double* obj){
+Model* lpNewModel(Env* env, int nbNumVars, int nbBoolVars, int nbIntVars,
+		  int nbCtr,
+		  double** bounds, double*** ctr, double** obj){
+
+	
 	IloEnv* e = (IloEnv*) env;
-	LP* pt = new LP(*e,nbVars);
+	LP* pt = new LP(*e,nbNumVars,nbBoolVars,nbIntVars);
 	int i = 0;
 	for (i=0; i < nbCtr; i++)
-		pt->addConstraint(bounds[i][0], ctr[i], bounds[i][1]);
-	pt->setObjective(obj,Max);
+		pt->addConstraint(bounds[i][0], ctr[i][0], ctr[i][1], ctr[i][2], bounds[i][1]);
+	pt->setObjective(obj[0],obj[1],obj[2],Max);
 	
-	printf("[C] model successfully loaded : %d vars, %d ctrs\n",nbVars,nbCtr);
+	printf("[C] model successfully loaded : %d numvar, %d binvar, %d intvar, %d ctrs\n",nbNumVars, nbBoolVars, nbIntVars, nbCtr);
 	return (void*) pt;
 }
 
-double* solveLP(Model* model){
+double** solveLP(Model* model){
 	LP* m = (LP*) model;
-	IloNumArray* a = m->solve();
-	int n = m -> getNbVars();
-	double* ans = (double*) malloc (n*sizeof(double));
-	if (NULL == ans)
-		return ans;
-	int i=0;
-	for (i=0; i< n; i++)
-		ans[i] = (*a)[i];
-	return (double*) ans;
+	return m->solve();
 
+}
+void lpRemoveModel(Model* model){
+	LP* m = (LP*) model;
+	delete m;
 }
 }
 

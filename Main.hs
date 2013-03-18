@@ -18,7 +18,7 @@ build2c = testlp >> do
   (obj,bou,ct,p) <- buildLP
   
   return (obj,bou,ct,p)
-
+{-
 main' = do
   x <- newArray $ map realToFrac [1,2,3]
   putStrLn $ "[hs]:" ++ show x
@@ -31,7 +31,7 @@ main' = do
   ans' <- peekArray 3 ans
   putStrLn $ show ans'
   
-  putStrLn "2nd Model :"
+  putStrLn "2nd Model :"-}
 main= do  
-  (ans,_) <- runVSupplyT $ runLPT $ testlp2 >> quickSolveLP
+  (ans,_) <- runVSupplyT $ runLPT $ testks >> quickSolveLP
   putStrLn $ show ans

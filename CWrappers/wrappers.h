@@ -7,7 +7,9 @@ extern "C" {
 	
 	double build (double*);
 	Env* lpInitSolver(void);
-	Model* lpNewModel(Env* env, int nbVars, int nbCtr, double** bounds, double** ctr, double* obj);
-	double* solveLP(Model* model);
+	Model* lpNewModel(Env* env, int nbNumVars, int nbBoolVars, int nbIntVars, int nbCtr, double** bounds, double*** ctr, double** obj);
+	double** solveLP(Model* model);
+
+	void lpRemoveModel(Model* m);
 }
 #endif
