@@ -12,13 +12,13 @@ Env* lpInitSolver(void){
 	return (void*) e;
 }
 
-Model* lpNewModel(Env* env, int nbNumVars, int nbBoolVars, int nbIntVars,
+Model* lpNewModel(int nbNumVars, int nbBoolVars, int nbIntVars,
 		  int nbCtr,
 		  double** bounds, double*** ctr, double** obj){
 
 	
-	IloEnv* e = (IloEnv*) env;
-	LP* pt = new LP(*e,nbNumVars,nbBoolVars,nbIntVars);
+	
+	LP* pt = new LP(*env,nbNumVars,nbBoolVars,nbIntVars);
 	int i = 0;
 	for (i=0; i < nbCtr; i++)
 		pt->addConstraint(bounds[i][0], ctr[i][0], ctr[i][1], ctr[i][2], bounds[i][1]);

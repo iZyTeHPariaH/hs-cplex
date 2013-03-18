@@ -14,10 +14,9 @@ import Foreign.Storable
 foreign import ccall "CWrappers/wrappers.h build" 
   c_build :: Ptr CDouble -> CDouble
 
-foreign import ccall "CWrappers/wrappers.h lpInitSolver" 
-  lpInitSolver :: IO (Ptr ())
+
 foreign import ccall "CWrappers/wrappers.h lpNewModel" 
-  lpNewModel :: Ptr () -> 
+  lpNewModel :: --Ptr () -> 
                 CInt -> CInt -> CInt ->
                 CInt ->
                 Ptr (Ptr CDouble) -> 
@@ -46,24 +45,23 @@ quickSolveLP = do
    (boun,cpt),
    (n,b,i,p)) <- buildLP'
   lift $ liftIO $ do
-    env <- lpInitSolver
-    m <- lpNewModel env (fromIntegral n) (fromIntegral b) (fromIntegral i) (fromIntegral p) boun cpt objpt
+    m <- lpNewModel (fromIntegral n) (fromIntegral b) (fromIntegral i) (fromIntegral p) boun cpt objpt
     ans <- solveLP m
     [nvals,bvals,ivals] <- peekArray 3 ans
     nans <- peekArray  n nvals
     bans <- peekArray b bvals
     ians <- peekArray i ivals
-    clean objpt boun cpt n b i p
+    clean objpt boun cpt ans n b i p
     lpRemoveModel m
     return $ map realToFrac $ if n > 0 then nans else [] ++ 
                               if b > 0 then bans else [] ++
                               if i > 0 then ians else []
                                                       
                                                       
-clean objpt boun cpt n b i p = do
+clean objpt boun cpt anspt n b i p = do
   bounds <- peekArray p boun
   ctrs <- peekArray p cpt
-  
+  clean' anspt
   clean' objpt
   foldM (\_ e -> free e) () bounds
   foldM (\_ e -> clean' e) () ctrs
